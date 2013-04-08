@@ -9,9 +9,7 @@ module OmniAuth
     # a has_secure_password method.
     module SecurePassword
       def self.included(base)
-        unless base.respond_to?(:has_secure_password)
-          base.extend ClassMethods
-        end
+        base.extend ClassMethods
       end
 
       module ClassMethods
@@ -58,18 +56,24 @@ module OmniAuth
       module InstanceMethodsOnActivation
         # Returns self if the password is correct, otherwise false.
         def authenticate(unencrypted_password)
-          if BCrypt::Password.new(password_digest) == unencrypted_password
-            self
+          condition = if respond_to?(:provider) && !provider.empty?
+            OmniAuth::Identity::LegacyPassword.matches?(unencrypted_password, self)
           else
-            false
+            BCrypt::Password.new(password_digest) == unencrypted_password
           end
+
+          condition ? self : false
         end
 
         # Encrypts the password into the password_digest attribute.
         def password=(unencrypted_password)
           @password = unencrypted_password
           if unencrypted_password && !unencrypted_password.empty?
-            self.password_digest = BCrypt::Password.create(unencrypted_password)
+            if respond_to?(:provider) && !provider.blank?
+              self.password_digest = OmniAuth::Identity::LegacyPassword.create(unencrypted_password, self)
+            else
+              self.password_digest = BCrypt::Password.create(unencrypted_password)
+            end
           end
         end
       end
