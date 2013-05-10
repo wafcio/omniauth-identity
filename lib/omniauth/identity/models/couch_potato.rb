@@ -5,11 +5,8 @@ module OmniAuth
     module Models
       # can not be named CouchPotato since there is a class with that name
       module CouchPotatoModule
-
         def self.included(base)
-
           base.class_eval do
-
             include ::OmniAuth::Identity::Model
             include ::OmniAuth::Identity::SecurePassword
 
